@@ -1,32 +1,40 @@
-import * as webcrypto from "webcrypto-core";
-const AlgorithmError = webcrypto.AlgorithmError;
-const WebCryptoError = webcrypto.WebCryptoError;
-const AlgorithmNames = webcrypto.AlgorithmNames;
-const BaseCrypto = webcrypto.BaseCrypto;
-const Base64Url = webcrypto.Base64Url;
-import { CryptoKey } from "../key";
-import * as native from "../native";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = require("tslib");
+var webcrypto = require("webcrypto-core");
+var AlgorithmError = webcrypto.AlgorithmError;
+var WebCryptoError = webcrypto.WebCryptoError;
+var AlgorithmNames = webcrypto.AlgorithmNames;
+var BaseCrypto = webcrypto.BaseCrypto;
+var Base64Url = webcrypto.Base64Url;
+var key_1 = require("../key");
+var native = require("../native");
 function b64_decode(b64url) {
     return new Buffer(Base64Url.decode(b64url));
 }
-export class HmacCrypto extends BaseCrypto {
-    static generateKey(algorithm, extractable, keyUsages) {
-        return new Promise((resolve, reject) => {
-            const length = algorithm.length || this.getHashSize(algorithm.hash.name);
-            native.HmacKey.generate(length, (err, key) => {
+var HmacCrypto = (function (_super) {
+    tslib_1.__extends(HmacCrypto, _super);
+    function HmacCrypto() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    HmacCrypto.generateKey = function (algorithm, extractable, keyUsages) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var length = algorithm.length || _this.getHashSize(algorithm.hash.name);
+            native.HmacKey.generate(length, function (err, key) {
                 if (err) {
                     reject(err);
                 }
                 else {
-                    resolve(new CryptoKey(key, algorithm, "secret", extractable, keyUsages));
+                    resolve(new key_1.CryptoKey(key, algorithm, "secret", extractable, keyUsages));
                 }
             });
         });
-    }
-    static importKey(format, keyData, algorithm, extractable, keyUsages) {
-        return new Promise((resolve, reject) => {
-            const formatLC = format.toLocaleLowerCase();
-            let raw;
+    };
+    HmacCrypto.importKey = function (format, keyData, algorithm, extractable, keyUsages) {
+        return new Promise(function (resolve, reject) {
+            var formatLC = format.toLocaleLowerCase();
+            var raw;
             switch (formatLC) {
                 case "jwk":
                     raw = b64_decode(keyData.k);
@@ -35,43 +43,43 @@ export class HmacCrypto extends BaseCrypto {
                     raw = keyData;
                     break;
                 default:
-                    throw new WebCryptoError(`ImportKey: Wrong format value '${format}'`);
+                    throw new WebCryptoError("ImportKey: Wrong format value '" + format + "'");
             }
-            native.HmacKey.import(raw, (err, key) => {
+            native.HmacKey.import(raw, function (err, key) {
                 if (err) {
                     reject(err);
                 }
                 else {
-                    resolve(new CryptoKey(key, algorithm, "secret", extractable, keyUsages));
+                    resolve(new key_1.CryptoKey(key, algorithm, "secret", extractable, keyUsages));
                 }
             });
         });
-    }
-    static exportKey(format, key) {
-        return new Promise((resolve, reject) => {
-            const nativeKey = key.native;
+    };
+    HmacCrypto.exportKey = function (format, key) {
+        return new Promise(function (resolve, reject) {
+            var nativeKey = key.native;
             switch (format.toLocaleLowerCase()) {
                 case "jwk":
-                    const jwk = {
+                    var jwk_1 = {
                         kty: "oct",
                         alg: "",
                         key_ops: ["sign", "verify"],
                         k: "",
                         ext: true,
                     };
-                    jwk.alg = "HS" + /-(\d+)$/.exec(key.algorithm.hash.name)[1];
-                    nativeKey.export((err, data) => {
+                    jwk_1.alg = "HS" + /-(\d+)$/.exec(key.algorithm.hash.name)[1];
+                    nativeKey.export(function (err, data) {
                         if (err) {
                             reject(err);
                         }
                         else {
-                            jwk.k = Base64Url.encode(data);
-                            resolve(jwk);
+                            jwk_1.k = Base64Url.encode(data);
+                            resolve(jwk_1);
                         }
                     });
                     break;
                 case "raw":
-                    nativeKey.export((err, data) => {
+                    nativeKey.export(function (err, data) {
                         if (err) {
                             reject(err);
                         }
@@ -80,15 +88,16 @@ export class HmacCrypto extends BaseCrypto {
                         }
                     });
                     break;
-                default: throw new WebCryptoError(`ExportKey: Unknown export format '${format}'`);
+                default: throw new WebCryptoError("ExportKey: Unknown export format '" + format + "'");
             }
         });
-    }
-    static sign(algorithm, key, data) {
-        return new Promise((resolve, reject) => {
-            const alg = this.wc2ssl(key.algorithm);
-            const nativeKey = key.native;
-            nativeKey.sign(alg, data, (err, signature) => {
+    };
+    HmacCrypto.sign = function (algorithm, key, data) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = _this.wc2ssl(key.algorithm);
+            var nativeKey = key.native;
+            nativeKey.sign(alg, data, function (err, signature) {
                 if (err) {
                     reject(new WebCryptoError("NativeError: " + err.message));
                 }
@@ -97,12 +106,13 @@ export class HmacCrypto extends BaseCrypto {
                 }
             });
         });
-    }
-    static verify(algorithm, key, signature, data) {
-        return new Promise((resolve, reject) => {
-            const alg = this.wc2ssl(key.algorithm);
-            const nativeKey = key.native;
-            nativeKey.verify(alg, data, signature, (err, res) => {
+    };
+    HmacCrypto.verify = function (algorithm, key, signature, data) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = _this.wc2ssl(key.algorithm);
+            var nativeKey = key.native;
+            nativeKey.verify(alg, data, signature, function (err, res) {
                 if (err) {
                     reject(new WebCryptoError("NativeError: " + err.message));
                 }
@@ -111,12 +121,12 @@ export class HmacCrypto extends BaseCrypto {
                 }
             });
         });
-    }
-    static wc2ssl(algorithm) {
-        const alg = algorithm.hash.name.toUpperCase().replace("-", "");
+    };
+    HmacCrypto.wc2ssl = function (algorithm) {
+        var alg = algorithm.hash.name.toUpperCase().replace("-", "");
         return alg;
-    }
-    static getHashSize(hashName) {
+    };
+    HmacCrypto.getHashSize = function (hashName) {
         switch (hashName) {
             case AlgorithmNames.Sha1:
                 return 160;
@@ -129,5 +139,7 @@ export class HmacCrypto extends BaseCrypto {
             default:
                 throw new AlgorithmError(AlgorithmError.NOT_SUPPORTED, hashName);
         }
-    }
-}
+    };
+    return HmacCrypto;
+}(BaseCrypto));
+exports.HmacCrypto = HmacCrypto;

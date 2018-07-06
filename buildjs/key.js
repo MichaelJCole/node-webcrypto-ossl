@@ -1,5 +1,7 @@
-export class CryptoKey {
-    constructor(key, alg, type, extractable, keyUsages) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var CryptoKey = (function () {
+    function CryptoKey(key, alg, type, extractable, keyUsages) {
         this.usages = [];
         this.native_ = key;
         this.extractable = extractable;
@@ -7,7 +9,13 @@ export class CryptoKey {
         this.type = type;
         this.usages = keyUsages;
     }
-    get native() {
-        return this.native_;
-    }
-}
+    Object.defineProperty(CryptoKey.prototype, "native", {
+        get: function () {
+            return this.native_;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return CryptoKey;
+}());
+exports.CryptoKey = CryptoKey;

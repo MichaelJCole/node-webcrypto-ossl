@@ -1,31 +1,38 @@
-import { Base64Url, BaseCrypto, WebCryptoError } from "webcrypto-core";
-import { CryptoKey } from "../key";
-import * as native from "../native";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = require("tslib");
+var webcrypto_core_1 = require("webcrypto-core");
+var key_1 = require("../key");
+var native = require("../native");
 function b64_decode(b64url) {
-    return new Buffer(Base64Url.decode(b64url));
+    return new Buffer(webcrypto_core_1.Base64Url.decode(b64url));
 }
-export class RsaCrypto extends BaseCrypto {
-    static generateKey(algorithm, extractable, keyUsages) {
-        return new Promise((resolve, reject) => {
-            const size = algorithm.modulusLength;
-            const exp = new Buffer(algorithm.publicExponent);
-            let nExp = 0;
+var RsaCrypto = (function (_super) {
+    tslib_1.__extends(RsaCrypto, _super);
+    function RsaCrypto() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    RsaCrypto.generateKey = function (algorithm, extractable, keyUsages) {
+        return new Promise(function (resolve, reject) {
+            var size = algorithm.modulusLength;
+            var exp = new Buffer(algorithm.publicExponent);
+            var nExp = 0;
             if (exp.length === 3) {
                 nExp = 1;
             }
-            native.Key.generateRsa(size, nExp, (err, key) => {
+            native.Key.generateRsa(size, nExp, function (err, key) {
                 try {
                     if (err) {
-                        reject(new WebCryptoError(`Rsa: Can not generate new key\n${err.message}`));
+                        reject(new webcrypto_core_1.WebCryptoError("Rsa: Can not generate new key\n" + err.message));
                     }
                     else {
-                        const prvUsages = ["sign", "decrypt", "unwrapKey"]
-                            .filter((usage) => keyUsages.some((keyUsage) => keyUsage === usage));
-                        const pubUsages = ["verify", "encrypt", "wrapKey"]
-                            .filter((usage) => keyUsages.some((keyUsage) => keyUsage === usage));
+                        var prvUsages = ["sign", "decrypt", "unwrapKey"]
+                            .filter(function (usage) { return keyUsages.some(function (keyUsage) { return keyUsage === usage; }); });
+                        var pubUsages = ["verify", "encrypt", "wrapKey"]
+                            .filter(function (usage) { return keyUsages.some(function (keyUsage) { return keyUsage === usage; }); });
                         resolve({
-                            privateKey: new CryptoKey(key, algorithm, "private", extractable, prvUsages),
-                            publicKey: new CryptoKey(key, algorithm, "public", true, pubUsages),
+                            privateKey: new key_1.CryptoKey(key, algorithm, "private", extractable, prvUsages),
+                            publicKey: new key_1.CryptoKey(key, algorithm, "public", true, pubUsages),
                         });
                     }
                 }
@@ -34,16 +41,16 @@ export class RsaCrypto extends BaseCrypto {
                 }
             });
         });
-    }
-    static importKey(format, keyData, algorithm, extractable, keyUsages) {
-        let keyType = native.KeyType.PUBLIC;
-        const alg = algorithm;
-        return new Promise((resolve, reject) => {
-            const formatLC = format.toLocaleLowerCase();
+    };
+    RsaCrypto.importKey = function (format, keyData, algorithm, extractable, keyUsages) {
+        var keyType = native.KeyType.PUBLIC;
+        var alg = algorithm;
+        return new Promise(function (resolve, reject) {
+            var formatLC = format.toLocaleLowerCase();
             switch (formatLC) {
                 case "jwk":
-                    const jwk = keyData;
-                    const data = {};
+                    var jwk = keyData;
+                    var data = {};
                     data["kty"] = jwk.kty;
                     data["n"] = b64_decode(jwk.n);
                     data["e"] = b64_decode(jwk.e);
@@ -56,10 +63,10 @@ export class RsaCrypto extends BaseCrypto {
                         data["dq"] = b64_decode(jwk.dq);
                         data["qi"] = b64_decode(jwk.qi);
                     }
-                    native.Key.importJwk(data, keyType, (err, key) => {
+                    native.Key.importJwk(data, keyType, function (err, key) {
                         try {
                             if (err) {
-                                reject(new WebCryptoError(`ImportKey: Cannot import key from JWK\n${err}`));
+                                reject(new webcrypto_core_1.WebCryptoError("ImportKey: Cannot import key from JWK\n" + err));
                             }
                             else {
                                 resolve(key);
@@ -73,17 +80,17 @@ export class RsaCrypto extends BaseCrypto {
                 case "pkcs8":
                 case "spki":
                     if (!Buffer.isBuffer(keyData)) {
-                        throw new WebCryptoError("ImportKey: keyData is not a Buffer");
+                        throw new webcrypto_core_1.WebCryptoError("ImportKey: keyData is not a Buffer");
                     }
-                    let importFunction = native.Key.importSpki;
+                    var importFunction = native.Key.importSpki;
                     if (formatLC === "pkcs8") {
                         keyType = native.KeyType.PRIVATE;
                         importFunction = native.Key.importPkcs8;
                     }
-                    importFunction(keyData, (err, key) => {
+                    importFunction(keyData, function (err, key) {
                         try {
                             if (err) {
-                                reject(new WebCryptoError(`ImportKey: Can not import key for ${format}\n${err.message}`));
+                                reject(new webcrypto_core_1.WebCryptoError("ImportKey: Can not import key for " + format + "\n" + err.message));
                             }
                             else {
                                 resolve(key);
@@ -95,34 +102,34 @@ export class RsaCrypto extends BaseCrypto {
                     });
                     break;
                 default:
-                    throw new WebCryptoError(`ImportKey: Wrong format value '${format}'`);
+                    throw new webcrypto_core_1.WebCryptoError("ImportKey: Wrong format value '" + format + "'");
             }
         })
-            .then((key) => {
+            .then(function (key) {
             alg.modulusLength = key.modulusLength() << 3;
             alg.publicExponent = new Uint8Array(key.publicExponent());
-            return new CryptoKey(key, alg, keyType ? "private" : "public", extractable, keyUsages);
+            return new key_1.CryptoKey(key, alg, keyType ? "private" : "public", extractable, keyUsages);
         });
-    }
-    static exportKey(format, key) {
-        return new Promise((resolve, reject) => {
-            const nativeKey = key.native;
-            const type = key.type === "public" ? native.KeyType.PUBLIC : native.KeyType.PRIVATE;
+    };
+    RsaCrypto.exportKey = function (format, key) {
+        return new Promise(function (resolve, reject) {
+            var nativeKey = key.native;
+            var type = key.type === "public" ? native.KeyType.PUBLIC : native.KeyType.PRIVATE;
             switch (format.toLocaleLowerCase()) {
                 case "jwk":
-                    nativeKey.exportJwk(type, (err, data) => {
+                    nativeKey.exportJwk(type, function (err, data) {
                         try {
-                            const jwk = { kty: "RSA" };
+                            var jwk = { kty: "RSA" };
                             jwk.key_ops = key.usages;
-                            jwk.e = Base64Url.encode(data.e);
-                            jwk.n = Base64Url.encode(data.n);
+                            jwk.e = webcrypto_core_1.Base64Url.encode(data.e);
+                            jwk.n = webcrypto_core_1.Base64Url.encode(data.n);
                             if (key.type === "private") {
-                                jwk.d = Base64Url.encode(data.d);
-                                jwk.p = Base64Url.encode(data.p);
-                                jwk.q = Base64Url.encode(data.q);
-                                jwk.dp = Base64Url.encode(data.dp);
-                                jwk.dq = Base64Url.encode(data.dq);
-                                jwk.qi = Base64Url.encode(data.qi);
+                                jwk.d = webcrypto_core_1.Base64Url.encode(data.d);
+                                jwk.p = webcrypto_core_1.Base64Url.encode(data.p);
+                                jwk.q = webcrypto_core_1.Base64Url.encode(data.q);
+                                jwk.dp = webcrypto_core_1.Base64Url.encode(data.dp);
+                                jwk.dq = webcrypto_core_1.Base64Url.encode(data.dq);
+                                jwk.qi = webcrypto_core_1.Base64Url.encode(data.qi);
                             }
                             resolve(jwk);
                         }
@@ -132,7 +139,7 @@ export class RsaCrypto extends BaseCrypto {
                     });
                     break;
                 case "spki":
-                    nativeKey.exportSpki((err, raw) => {
+                    nativeKey.exportSpki(function (err, raw) {
                         if (err) {
                             reject(err);
                         }
@@ -142,7 +149,7 @@ export class RsaCrypto extends BaseCrypto {
                     });
                     break;
                 case "pkcs8":
-                    nativeKey.exportPkcs8((err, raw) => {
+                    nativeKey.exportPkcs8(function (err, raw) {
                         if (err) {
                             reject(err);
                         }
@@ -152,21 +159,27 @@ export class RsaCrypto extends BaseCrypto {
                     });
                     break;
                 default:
-                    throw new WebCryptoError(`ExportKey: Unknown export format '${format}'`);
+                    throw new webcrypto_core_1.WebCryptoError("ExportKey: Unknown export format '" + format + "'");
             }
         });
-    }
-    static wc2ssl(algorithm) {
-        const alg = algorithm.hash.name.toUpperCase().replace("-", "");
+    };
+    RsaCrypto.wc2ssl = function (algorithm) {
+        var alg = algorithm.hash.name.toUpperCase().replace("-", "");
         return alg;
+    };
+    return RsaCrypto;
+}(webcrypto_core_1.BaseCrypto));
+exports.RsaCrypto = RsaCrypto;
+var RsaPKCS1 = (function (_super) {
+    tslib_1.__extends(RsaPKCS1, _super);
+    function RsaPKCS1() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-}
-export class RsaPKCS1 extends RsaCrypto {
-    static exportKey(format, key) {
-        return super.exportKey(format, key)
-            .then((jwk) => {
+    RsaPKCS1.exportKey = function (format, key) {
+        return _super.exportKey.call(this, format, key)
+            .then(function (jwk) {
             if (format === "jwk") {
-                const reg = /(\d+)$/;
+                var reg = /(\d+)$/;
                 jwk.alg = "RS" + reg.exec(key.algorithm.hash.name)[1];
                 jwk.ext = true;
                 if (key.type === "public") {
@@ -175,70 +188,80 @@ export class RsaPKCS1 extends RsaCrypto {
             }
             return jwk;
         });
-    }
-    static sign(algorithm, key, data) {
-        return new Promise((resolve, reject) => {
-            const alg = this.wc2ssl(key.algorithm);
-            const nativeKey = key.native;
-            nativeKey.sign(alg, data, (err, signature) => {
+    };
+    RsaPKCS1.sign = function (algorithm, key, data) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = _this.wc2ssl(key.algorithm);
+            var nativeKey = key.native;
+            nativeKey.sign(alg, data, function (err, signature) {
                 if (err) {
-                    reject(new WebCryptoError("NativeError: " + err.message));
+                    reject(new webcrypto_core_1.WebCryptoError("NativeError: " + err.message));
                 }
                 else {
                     resolve(signature.buffer);
                 }
             });
         });
-    }
-    static verify(algorithm, key, signature, data) {
-        return new Promise((resolve, reject) => {
-            const alg = this.wc2ssl(key.algorithm);
-            const nativeKey = key.native;
-            nativeKey.verify(alg, data, signature, (err, res) => {
+    };
+    RsaPKCS1.verify = function (algorithm, key, signature, data) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = _this.wc2ssl(key.algorithm);
+            var nativeKey = key.native;
+            nativeKey.verify(alg, data, signature, function (err, res) {
                 if (err) {
-                    reject(new WebCryptoError("NativeError: " + err.message));
+                    reject(new webcrypto_core_1.WebCryptoError("NativeError: " + err.message));
                 }
                 else {
                     resolve(res);
                 }
             });
         });
+    };
+    return RsaPKCS1;
+}(RsaCrypto));
+exports.RsaPKCS1 = RsaPKCS1;
+var RsaPSS = (function (_super) {
+    tslib_1.__extends(RsaPSS, _super);
+    function RsaPSS() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-}
-export class RsaPSS extends RsaCrypto {
-    static sign(algorithm, key, data) {
-        return new Promise((resolve, reject) => {
-            const alg = this.wc2ssl(key.algorithm);
-            const nativeKey = key.native;
-            nativeKey.RsaPssSign(alg, algorithm.saltLength, data, (err, signature) => {
+    RsaPSS.sign = function (algorithm, key, data) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = _this.wc2ssl(key.algorithm);
+            var nativeKey = key.native;
+            nativeKey.RsaPssSign(alg, algorithm.saltLength, data, function (err, signature) {
                 if (err) {
-                    reject(new WebCryptoError("NativeError: " + err.message));
+                    reject(new webcrypto_core_1.WebCryptoError("NativeError: " + err.message));
                 }
                 else {
                     resolve(signature.buffer);
                 }
             });
         });
-    }
-    static verify(algorithm, key, signature, data) {
-        return new Promise((resolve, reject) => {
-            const alg = this.wc2ssl(key.algorithm);
-            const nativeKey = key.native;
-            nativeKey.RsaPssVerify(alg, algorithm.saltLength, data, signature, (err, res) => {
+    };
+    RsaPSS.verify = function (algorithm, key, signature, data) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = _this.wc2ssl(key.algorithm);
+            var nativeKey = key.native;
+            nativeKey.RsaPssVerify(alg, algorithm.saltLength, data, signature, function (err, res) {
                 if (err) {
-                    reject(new WebCryptoError("NativeError: " + err.message));
+                    reject(new webcrypto_core_1.WebCryptoError("NativeError: " + err.message));
                 }
                 else {
                     resolve(res);
                 }
             });
         });
-    }
-    static exportKey(format, key) {
-        return super.exportKey(format, key)
-            .then((jwk) => {
+    };
+    RsaPSS.exportKey = function (format, key) {
+        return _super.exportKey.call(this, format, key)
+            .then(function (jwk) {
             if (format === "jwk") {
-                const reg = /(\d+)$/;
+                var reg = /(\d+)$/;
                 jwk.alg = "PS" + reg.exec(key.algorithm.hash.name)[1];
                 jwk.ext = true;
                 if (key.type === "public") {
@@ -247,15 +270,21 @@ export class RsaPSS extends RsaCrypto {
             }
             return jwk;
         });
+    };
+    return RsaPSS;
+}(RsaCrypto));
+exports.RsaPSS = RsaPSS;
+var RsaOAEP = (function (_super) {
+    tslib_1.__extends(RsaOAEP, _super);
+    function RsaOAEP() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-}
-export class RsaOAEP extends RsaCrypto {
-    static exportKey(format, key) {
-        return super.exportKey(format, key)
-            .then((jwk) => {
+    RsaOAEP.exportKey = function (format, key) {
+        return _super.exportKey.call(this, format, key)
+            .then(function (jwk) {
             if (format === "jwk") {
                 jwk.alg = "RSA-OAEP";
-                const mdSize = /(\d+)$/.exec(key.algorithm.hash.name)[1];
+                var mdSize = /(\d+)$/.exec(key.algorithm.hash.name)[1];
                 if (mdSize !== "1") {
                     jwk.alg += "-" + mdSize;
                 }
@@ -269,29 +298,32 @@ export class RsaOAEP extends RsaCrypto {
             }
             return jwk;
         });
-    }
-    static encrypt(algorithm, key, data) {
+    };
+    RsaOAEP.encrypt = function (algorithm, key, data) {
         return this.EncryptDecrypt(algorithm, key, data, false);
-    }
-    static decrypt(algorithm, key, data) {
+    };
+    RsaOAEP.decrypt = function (algorithm, key, data) {
         return this.EncryptDecrypt(algorithm, key, data, true);
-    }
-    static EncryptDecrypt(algorithm, key, data, type) {
-        return new Promise((resolve, reject) => {
-            const alg = this.wc2ssl(key.algorithm);
-            const nativeKey = key.native;
-            let label = null;
+    };
+    RsaOAEP.EncryptDecrypt = function (algorithm, key, data, type) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = _this.wc2ssl(key.algorithm);
+            var nativeKey = key.native;
+            var label = null;
             if (algorithm.label) {
                 label = new Buffer(algorithm.label);
             }
-            nativeKey.RsaOaepEncDec(alg, data, label, type, (err, res) => {
+            nativeKey.RsaOaepEncDec(alg, data, label, type, function (err, res) {
                 if (err) {
-                    reject(new WebCryptoError("NativeError: " + err));
+                    reject(new webcrypto_core_1.WebCryptoError("NativeError: " + err));
                 }
                 else {
                     resolve(res.buffer);
                 }
             });
         });
-    }
-}
+    };
+    return RsaOAEP;
+}(RsaCrypto));
+exports.RsaOAEP = RsaOAEP;

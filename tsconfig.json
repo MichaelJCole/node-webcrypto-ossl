@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "es5",
         "noUnusedLocals": true,
         "strictNullChecks": true,
         "module": "commonjs",
@@ -10,7 +10,13 @@
         "declaration": false,
         "sourceMap": false,
         "importHelpers": true,
-        "noImplicitAny": true
+        "noImplicitAny": true,
+        "lib": [
+          "ES5",
+          "ES2015",
+          "DOM",
+          "ScriptHost"
+        ]
     },
     "exclude": [
         "node_modules",

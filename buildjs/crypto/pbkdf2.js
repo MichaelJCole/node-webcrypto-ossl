@@ -1,18 +1,25 @@
-import * as Core from "webcrypto-core";
-import { CryptoKey } from "../key";
-import * as native from "../native";
-import { AesCrypto } from "./aes";
-import { HmacCrypto } from "./hmac";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = require("tslib");
+var Core = require("webcrypto-core");
+var key_1 = require("../key");
+var native = require("../native");
+var aes_1 = require("./aes");
+var hmac_1 = require("./hmac");
 function b64_decode(b64url) {
     return new Buffer(Core.Base64Url.decode(b64url));
 }
-export class Pbkdf2Crypto extends Core.BaseCrypto {
-    static importKey(format, keyData, algorithm, extractable, keyUsages) {
-        return new Promise((resolve, reject) => {
-            const formatLC = format.toLocaleLowerCase();
-            const alg = algorithm;
+var Pbkdf2Crypto = (function (_super) {
+    tslib_1.__extends(Pbkdf2Crypto, _super);
+    function Pbkdf2Crypto() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Pbkdf2Crypto.importKey = function (format, keyData, algorithm, extractable, keyUsages) {
+        return new Promise(function (resolve, reject) {
+            var formatLC = format.toLocaleLowerCase();
+            var alg = algorithm;
             alg.name = alg.name.toUpperCase();
-            let raw;
+            var raw;
             switch (formatLC) {
                 case "jwk":
                     raw = b64_decode(keyData.k);
@@ -21,48 +28,50 @@ export class Pbkdf2Crypto extends Core.BaseCrypto {
                     raw = keyData;
                     break;
                 default:
-                    throw new Core.WebCryptoError(`ImportKey: Wrong format value '${format}'`);
+                    throw new Core.WebCryptoError("ImportKey: Wrong format value '" + format + "'");
             }
             alg.length = raw.byteLength * 8;
-            native.Pbkdf2Key.importKey(raw, (err, key) => {
+            native.Pbkdf2Key.importKey(raw, function (err, key) {
                 if (err) {
                     reject(err);
                 }
                 else {
-                    resolve(new CryptoKey(key, algorithm, "secret", extractable, keyUsages));
+                    resolve(new key_1.CryptoKey(key, algorithm, "secret", extractable, keyUsages));
                 }
             });
         });
-    }
-    static deriveKey(algorithm, baseKey, derivedKeyType, extractable, keyUsages) {
+    };
+    Pbkdf2Crypto.deriveKey = function (algorithm, baseKey, derivedKeyType, extractable, keyUsages) {
+        var _this = this;
         return Promise.resolve()
-            .then(() => {
-            return this.deriveBits(algorithm, baseKey, derivedKeyType.length);
+            .then(function () {
+            return _this.deriveBits(algorithm, baseKey, derivedKeyType.length);
         })
-            .then((raw) => {
-            let CryptoClass;
+            .then(function (raw) {
+            var CryptoClass;
             switch (derivedKeyType.name.toUpperCase()) {
                 case Core.AlgorithmNames.AesCBC:
                 case Core.AlgorithmNames.AesGCM:
                 case Core.AlgorithmNames.AesKW:
-                    CryptoClass = AesCrypto;
+                    CryptoClass = aes_1.AesCrypto;
                     break;
                 case Core.AlgorithmNames.Hmac:
-                    CryptoClass = HmacCrypto;
+                    CryptoClass = hmac_1.HmacCrypto;
                     break;
                 default:
                     throw new Core.AlgorithmError(Core.AlgorithmError.UNSUPPORTED_ALGORITHM, algorithm.name);
             }
             return CryptoClass.importKey("raw", new Buffer(raw), derivedKeyType, extractable, keyUsages);
         });
-    }
-    static deriveBits(algorithm, baseKey, length) {
-        return new Promise((resolve, reject) => {
-            const alg = algorithm;
-            const nativeKey = baseKey.native;
-            const hash = Core.PrepareAlgorithm(alg.hash);
-            const salt = new Buffer(Core.PrepareData(alg.salt, "salt"));
-            nativeKey.deriveBits(this.wc2ssl(hash), salt, alg.iterations, length, (err, raw) => {
+    };
+    Pbkdf2Crypto.deriveBits = function (algorithm, baseKey, length) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var alg = algorithm;
+            var nativeKey = baseKey.native;
+            var hash = Core.PrepareAlgorithm(alg.hash);
+            var salt = new Buffer(Core.PrepareData(alg.salt, "salt"));
+            nativeKey.deriveBits(_this.wc2ssl(hash), salt, alg.iterations, length, function (err, raw) {
                 if (err) {
                     reject(err);
                 }
@@ -71,9 +80,11 @@ export class Pbkdf2Crypto extends Core.BaseCrypto {
                 }
             });
         });
-    }
-    static wc2ssl(algorithm) {
-        const alg = algorithm.name.toUpperCase().replace("-", "");
+    };
+    Pbkdf2Crypto.wc2ssl = function (algorithm) {
+        var alg = algorithm.name.toUpperCase().replace("-", "");
         return alg;
-    }
-}
+    };
+    return Pbkdf2Crypto;
+}(Core.BaseCrypto));
+exports.Pbkdf2Crypto = Pbkdf2Crypto;
