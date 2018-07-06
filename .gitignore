@@ -1,6 +1,6 @@
 /.vscode
 /build
-/buildjs
+/xxxbuildjs
 /node_modules
 /.nyc_output/
 /coverage/
