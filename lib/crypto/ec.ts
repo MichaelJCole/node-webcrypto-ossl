@@ -39,7 +39,8 @@ function b64_decode(b64url: string): Buffer {
     return new Buffer(Base64Url.decode(b64url));
 }
 
-function buf_pad(buf: Buffer, padSize: number = 0) {
+function buf_pad(buf: Buffer, padSize: number) {
+    padSize = padSize || 0;
     if (padSize && Buffer.length < padSize) {
         const pad = new Buffer(new Uint8Array(padSize - buf.length).map((v) => 0));
         return Buffer.concat([pad, buf]);
